@@ -7,7 +7,7 @@ This repo implements a multistage build Dockerfile which packages a simple webse
 To build the image we run the following command:
 
 ```bash
-docker build -t dockertest:latest .
+docker build -t service-2:latest .
 ```
 
 ## Running

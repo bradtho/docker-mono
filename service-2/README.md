@@ -15,7 +15,7 @@ docker build -t dockertest:latest .
 To run the image we run the following command:
 
 ```bash
-docker run -p 8000:8000 dockertest:latest .
+docker run -p 8002:8002 dockertest:latest .
 ```
 
 ## Validating
@@ -23,18 +23,18 @@ docker run -p 8000:8000 dockertest:latest .
 To validate we can either use a browser or use `curl`:
 
 ```bash
-curl -vvv http://localhost:8000/
+curl -vvv http://localhost:8002/
 ```
 
 If the server is running we should expect to see output similar to the following:
 
 ```bash
-$ curl -vvv http://localhost:8000/  
+$ curl -vvv http://localhost:8002/  
 *   Trying ::1...
 * TCP_NODELAY set
-* Connected to localhost (::1) port 8000 (#0)
+* Connected to localhost (::1) port 8002 (#0)
 > GET / HTTP/1.1
-> Host: localhost:8000
+> Host: localhost:8002
 > User-Agent: curl/7.64.1
 > Accept: */*
 > 

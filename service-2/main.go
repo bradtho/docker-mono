@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	fmt.Println("starting http server for service-2")
+	fmt.Println("starting http server for service two")
 	r := mux.NewRouter()
 	r.HandleFunc("/", helloworld)
 	r.HandleFunc("/go", goquote)

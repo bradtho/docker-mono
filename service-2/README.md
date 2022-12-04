@@ -1,6 +1,6 @@
 # Docker
 
-This repo implements a multistage build Dockerfile which packages a simple webservice.
+This repo implements a multistage build Dockerfile which packages a simple webservice
 
 ## Building
 

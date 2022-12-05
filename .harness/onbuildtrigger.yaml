@@ -1,0 +1,14 @@
+inputSet:
+  identifier: "buildtrigger"
+  name: "build-trigger"
+  orgIdentifier: "default"
+  projectIdentifier: "sandpit"
+  pipeline:
+    identifier: "dockermono"
+    properties:
+      ci:
+        codebase:
+          build:
+            type: "branch"
+            spec:
+              branch: "<+trigger.branch>"

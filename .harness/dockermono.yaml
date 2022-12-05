@@ -1,331 +1,127 @@
----
 pipeline:
-  projectIdentifier: "sandpit"
-  orgIdentifier: "default"
+  projectIdentifier: sandpit
+  orgIdentifier: default
   tags: {}
   stages:
-  - parallel:
-    - stage:
-        name: "Build Image 1"
-        identifier: "Build_Image_1"
-        type: "CI"
-        spec:
-          cloneCodebase: true
-          infrastructure:
-            type: "KubernetesDirect"
+    - parallel:
+        - stage:
+            name: Build Image 1
+            identifier: Build_Image_1
+            type: CI
             spec:
-              connectorRef: "microk8s"
-              namespace: "development"
-              automountServiceAccountToken: true
-              nodeSelector: {}
-              containerSecurityContext:
-                runAsNonRoot: false
-              os: "Linux"
-          execution:
-            steps:
-            - step:
-                type: "Run"
-                name: "Build Paths Service 1"
-                identifier: "Build_Paths"
+              cloneCodebase: true
+              infrastructure:
+                type: KubernetesDirect
                 spec:
-                  connectorRef: "account.Docker_Hub"
-                  image: "bitnami/git"
-                  shell: "Bash"
-                  command: "CHANGES=($(git diff --name-only HEAD HEAD~1 | cut -d/\
-                    \ -f1))\n\nif printf '%s\\0' \"${CHANGES[@]}\" | grep -Fxqz --\
-                    \ \"$SERVICE\"; then\n  BUILD=True\nfi"
-                  envVariables:
-                    SERVICE: "service-1"
-                  outputVariables:
-                  - name: "BUILD"
-                  imagePullPolicy: "Always"
-                failureStrategies: []
-            - step:
-                type: "BuildAndPushDockerRegistry"
-                name: "Build Service-1"
-                identifier: "Build_Image"
-                spec:
-                  connectorRef: "account.Docker_Hub_Repo"
-                  repo: "bradtho/service-1"
-                  tags:
-                  - "latest"
-                  dockerfile: "<+execution.steps.Build_Paths.spec.envVariables.SERVICE>/Dockerfile"
-                  context: "<+execution.steps.Build_Paths.spec.envVariables.SERVICE>"
-                  optimize: true
-                failureStrategies: []
-                when:
-                  stageStatus: "Success"
-                  condition: "<+execution.steps.Build_Paths.output.outputVariables.BUILD>"
-        variables:
-        - name: "container"
-          type: "String"
-          description: ""
-          value: "docker"
-        when:
-          pipelineStatus: "Success"
-    - stage:
-        name: "Build Image 2"
-        identifier: "Build_Image_2"
-        description: ""
-        type: "CI"
-        spec:
-          cloneCodebase: true
-          infrastructure:
-            useFromStage: "Build_Image_1"
-          execution:
-            steps:
-            - step:
-                type: "Run"
-                name: "Build Paths Service 2"
-                identifier: "Build_Service_2"
-                spec:
-                  connectorRef: "account.Docker_Hub"
-                  image: "bitnami/git"
-                  shell: "Bash"
-                  command: "CHANGES=($(git diff --name-only HEAD HEAD~1 | cut -d/\
-                    \ -f1))\n\nif printf '%s\\0' \"${CHANGES[@]}\" | grep -Fxqz --\
-                    \ \"$SERVICE\"; then\n  BUILD=True\nfi"
-                  envVariables:
-                    SERVICE: "service-2"
-                  outputVariables:
-                  - name: "BUILD"
-                failureStrategies: []
-            - step:
-                type: "BuildAndPushDockerRegistry"
-                name: "Build Service-2"
-                identifier: "Build_Service2"
-                spec:
-                  connectorRef: "account.Docker_Hub_Repo"
-                  repo: "bradtho/service-2"
-                  tags:
-                  - "latest"
-                  dockerfile: "service-2/Dockerfile"
-                  context: "service-2"
-                when:
-                  stageStatus: "Success"
-                  condition: "<+execution.steps.Build_Service_2.output.outputVariables.BUILD>"
-                failureStrategies: []
-        variables:
-        - name: "container"
-          type: "String"
-          description: ""
-          value: "docker"
-  - stage:
-      name: "Approval"
-      identifier: "Approval"
-      description: ""
-      type: "Approval"
-      spec:
-        execution:
-          steps:
-          - step:
-              name: "Approve"
-              identifier: "Approve"
-              type: "HarnessApproval"
-              timeout: "1d"
-              spec:
-                approvalMessage: "Please review the following information\nand approve\
-                  \ the pipeline progression"
-                includePipelineExecutionHistory: true
-                approvers:
-                  minimumCount: 1
-                  disallowPipelineExecutor: false
-                  userGroups:
-                  - "account._account_all_users"
-                approverInputs: []
-      tags: {}
-  - stage:
-      name: "Deploy Base"
-      identifier: "deploybase"
-      description: ""
-      type: "Deployment"
-      spec:
-        deploymentType: "Kubernetes"
-        service:
-          serviceRef: "basedeployment"
-          serviceInputs:
-            serviceDefinition:
-              type: "Kubernetes"
-              spec:
-                manifests:
-                - manifest:
-                    identifier: "hello-kubernetes"
-                    type: "K8sManifest"
-                    spec:
-                      store:
-                        type: "Github"
-                        spec:
-                          branch: "<+input>"
-                artifacts:
-                  primary:
-                    primaryArtifactRef: "<+input>"
-                    sources: "<+input>"
-        environment:
-          environmentRef: "dev"
-          deployToAll: false
-          infrastructureDefinitions:
-          - identifier: "microk8s"
-        execution:
-          steps:
-          - stepGroup:
-              name: "Ignore this bit"
-              identifier: "Baseline_Testing"
-              steps:
-              - step:
-                  name: "Rollout Deployment"
-                  identifier: "rolloutDeployment"
-                  type: "K8sRollingDeploy"
-                  timeout: "10m"
-                  spec:
-                    skipDryRun: false
-                    pruningEnabled: true
-              - step:
-                  type: "ShellScript"
-                  name: "Curl Baseline"
-                  identifier: "Curl_Baseline"
-                  spec:
-                    shell: "Bash"
-                    onDelegate: true
-                    source:
-                      type: "Inline"
+                  connectorRef: microk8s
+                  namespace: development
+                  automountServiceAccountToken: true
+                  nodeSelector: {}
+                  containerSecurityContext:
+                    runAsNonRoot: false
+                  os: Linux
+              execution:
+                steps:
+                  - step:
+                      type: Run
+                      name: Build Paths Service 1
+                      identifier: Build_Paths
                       spec:
-                        script: "for i in {1..10}\ndo\n    curl -H \"Host: www.example.com\"\
-                          \ http://10.10.10.69 | grep base-deployment\ndone"
-                    environmentVariables: []
-                    outputVariables: []
-                  timeout: "10m"
-          - parallel:
-            - step:
-                type: "K8sCanaryDeploy"
-                name: "Canary Deployment"
-                identifier: "Canary_Deployment"
-                spec:
-                  skipDryRun: false
-                  instanceSelection:
-                    type: "Count"
-                    spec:
-                      count: 1
-                timeout: "10m"
-                failureStrategies: []
-            - step:
-                type: "K8sApply"
-                name: "Canary Resources"
-                identifier: "Canary_Resources"
-                spec:
-                  filePaths:
-                  - "canary.yaml"
-                  skipDryRun: false
-                  skipSteadyStateCheck: false
-                  skipRendering: false
-                  overrides: []
-                timeout: "10m"
-          - stepGroup:
-              name: "Canary Testing"
-              identifier: "Canary_Testing"
-              steps:
-              - step:
-                  type: "ShellScript"
-                  name: "Curl Canary"
-                  identifier: "Curl_Canary"
-                  spec:
-                    shell: "Bash"
-                    onDelegate: true
-                    source:
-                      type: "Inline"
+                        connectorRef: account.Docker_Hub
+                        image: bitnami/git
+                        shell: Bash
+                        command: |-
+                          CHANGES=($(git diff --name-only HEAD HEAD~1 | cut -d/ -f1))
+
+                          if printf '%s\0' "${CHANGES[@]}" | grep -Fxqz -- "$SERVICE"; then
+                            BUILD=True
+                          fi
+                        envVariables:
+                          SERVICE: service-1
+                        outputVariables:
+                          - name: BUILD
+                        imagePullPolicy: Always
+                      failureStrategies: []
+                  - step:
+                      type: BuildAndPushDockerRegistry
+                      name: Build Service-1
+                      identifier: Build_Image
                       spec:
-                        script: "for i in {1..20}\ndo\n    curl -H \"Host: www.example.com\"\
-                          \ http://10.10.10.69 | grep base-deployment\ndone"
-                    environmentVariables: []
-                    outputVariables: []
-                  timeout: "10m"
-                  failureStrategies: []
-              - step:
-                  type: "K8sApply"
-                  name: "Canary Resources Scaling"
-                  identifier: "Canary_Resources_Scaling"
-                  spec:
-                    filePaths:
-                    - "canary50.yaml"
-                    skipDryRun: false
-                    skipSteadyStateCheck: false
-                    skipRendering: false
-                    overrides: []
-                  timeout: "10m"
-                  failureStrategies: []
-              - step:
-                  type: "ShellScript"
-                  name: "Curl Canary Scale"
-                  identifier: "Curl_Canary_Scale"
-                  spec:
-                    shell: "Bash"
-                    onDelegate: true
-                    source:
-                      type: "Inline"
+                        connectorRef: account.Docker_Hub_Repo
+                        repo: bradtho/service-1
+                        tags:
+                          - latest
+                        dockerfile: <+execution.steps.Build_Paths.spec.envVariables.SERVICE>/Dockerfile
+                        context: <+execution.steps.Build_Paths.spec.envVariables.SERVICE>
+                        optimize: true
+                      failureStrategies: []
+                      when:
+                        stageStatus: Success
+                        condition: <+execution.steps.Build_Paths.output.outputVariables.BUILD>
+            variables:
+              - name: container
+                type: String
+                description: ""
+                value: docker
+            when:
+              pipelineStatus: Success
+        - stage:
+            name: Build Image 2
+            identifier: Build_Image_2
+            description: ""
+            type: CI
+            spec:
+              cloneCodebase: true
+              infrastructure:
+                useFromStage: Build_Image_1
+              execution:
+                steps:
+                  - step:
+                      type: Run
+                      name: Build Paths Service 2
+                      identifier: Build_Service_2
                       spec:
-                        script: "for i in {1..20}\ndo\n    curl -H \"Host: www.example.com\"\
-                          \ http://10.10.10.69 | grep base-deployment\ndone"
-                    environmentVariables: []
-                    outputVariables: []
-                  timeout: "10m"
-          - step:
-              type: "K8sApply"
-              name: "Scale Down"
-              identifier: "Scale_Down"
-              spec:
-                filePaths:
-                - "canary.yaml"
-                skipDryRun: false
-                skipSteadyStateCheck: false
-                skipRendering: false
-                overrides: []
-              timeout: "10m"
-          - stepGroup:
-              name: "Canary Cleanup"
-              identifier: "Canary_Cleanup"
-              steps:
-              - step:
-                  type: "K8sCanaryDelete"
-                  name: "Canary Delete"
-                  identifier: "Canary_Delete"
-                  spec:
-                    skipDryRun: false
-                  timeout: "10m"
-              - step:
-                  type: "K8sDelete"
-                  name: "Service and Ingress Delete"
-                  identifier: "Service_and_Ingress_Delete"
-                  spec:
-                    deleteResources:
-                      type: "ResourceName"
+                        connectorRef: account.Docker_Hub
+                        image: bitnami/git
+                        shell: Bash
+                        command: |-
+                          CHANGES=($(git diff --name-only HEAD HEAD~1 | cut -d/ -f1))
+
+                          if printf '%s\0' "${CHANGES[@]}" | grep -Fxqz -- "$SERVICE"; then
+                            BUILD=True
+                          fi
+                        envVariables:
+                          SERVICE: service-2
+                        outputVariables:
+                          - name: BUILD
+                      failureStrategies: []
+                  - step:
+                      type: BuildAndPushDockerRegistry
+                      name: Build Service-2
+                      identifier: Build_Service2
                       spec:
-                        resourceNames:
-                        - "development/Ingress/base-deployment-canary-ingress"
-                        - "development/Service/base-deployment-canary-svc"
-                  timeout: "10m"
-          rollbackSteps:
-          - step:
-              name: "Rollback Rollout Deployment"
-              identifier: "rollbackRolloutDeployment"
-              type: "K8sRollingRollback"
-              timeout: "10m"
-              spec:
-                pruningEnabled: false
-      tags: {}
-      failureStrategies:
-      - onFailure:
-          errors:
-          - "AllErrors"
-          action:
-            type: "StageRollback"
-      variables: []
+                        connectorRef: account.Docker_Hub_Repo
+                        repo: bradtho/service-2
+                        tags:
+                          - latest
+                        dockerfile: service-2/Dockerfile
+                        context: service-2
+                      when:
+                        stageStatus: Success
+                        condition: <+execution.steps.Build_Service_2.output.outputVariables.BUILD>
+                      failureStrategies: []
+            variables:
+              - name: container
+                type: String
+                description: ""
+                value: docker
   allowStageExecutions: true
   variables: []
+  identifier: dockermono
+  name: docker-mono
   properties:
     ci:
       codebase:
-        connectorRef: "account.Github_OAuth_1661164576460"
-        repoName: "bradtho/docker-mono"
-        build: "<+input>"
-        prCloneStrategy: "MergeCommit"
-  identifier: "dockermono"
-  name: "docker-mono"
+        connectorRef: account.Github_OAuth_1661164576460
+        repoName: bradtho/docker-mono
+        build: <+input>

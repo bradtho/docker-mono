@@ -159,12 +159,11 @@ pipeline:
                       type: Inline
                       spec:
                         script: |-
-                          curl -OL https://go.dev/dl/go1.18.9.linux-arm64.tar.gz
-                          tar -xvf go1.18.9.linux-arm64.tar.gz
-                          ls -l
-                          echo 'GOPATH=~/go' >> ~/.bashrc
-                          source ~/.bashrc
-                          mkdir $GOPATH
+                          curl -OL https://go.dev/dl/go1.19.4.linux-arm64.tar.gz
+                          rm -rf /usr/local/go && tar -C /usr/local -xzf go1.19.4.linux-amd64.tar.gz
+                          export PATH=$PATH:/usr/local/go/bin
+
+                          go version
 
                           go get -u go.mozilla.org/sops/cmd/sops
 

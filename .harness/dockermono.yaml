@@ -159,13 +159,25 @@ pipeline:
                       type: Inline
                       spec:
                         script: |-
-                          curl -OL https://go.dev/dl/go1.19.4.linux-arm64.tar.gz
+                          # Validate
+                          pwd
+                          echo $PATH
+
+                          # Download and install Go 1.19
+
+                          cd /opt/harness-delegate/
+                          mkdir downloads && cd downloads
+                          curl -O https://go.dev/dl/go1.19.4.linux-arm64.tar.gz
                           rm -rf /usr/local/go && tar -C /usr/local -xzf go1.19.4.linux-amd64.tar.gz
-                          export PATH=$PATH:/usr/local/go/bin
 
-                          go version
+                          # Adding go binaries to $PATH
+                          echo 'export PATH=$PATH:/usr/local/go/bin' >> $HOME/.bashrc
+                          source $HOME/.bashrc
 
-                          go get -u go.mozilla.org/sops/cmd/sops
+                          # Install sops with go and add it to $PATH
+                          go install go.mozilla.org/sops/cmd/sops@latest
+                          echo 'export PATH=$PATH:/root/go/bin' >> $HOME/.bashrc
+                          source $HOME/.bashrc
 
                           sops -d /kubernetes/redistore/values/staging/secrets.yaml
                     environmentVariables: []

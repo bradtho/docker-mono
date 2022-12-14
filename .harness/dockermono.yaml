@@ -160,9 +160,7 @@ pipeline:
                       spec:
                         script: |-
                           # Validate
-                          pwd
-                          echo $PATH
-                          echo $HOME
+                          ls -al $HOME
 
                           # Download and install Go 1.19
 
@@ -170,16 +168,19 @@ pipeline:
 
                           ls -al
 
-                          rm -rf /usr/local/go && tar -xvzf go1.19.4.linux-amd64.tar.gz -C /usr/local
+                          rm -rf /usr/local/go && tar -xzf go1.19.4.linux-amd64.tar.gz -C /usr/local
+
+                          ls -al /usr/local/go
 
                           # Adding go binaries to $PATH
-                          echo 'export PATH=$PATH:/usr/local/go/bin' >> $HOME/.bashrc
-                          source $HOME/.bashrc
+                          export PATH=$PATH:/usr/local/go/bin
+
+                          go version
 
                           # Install sops with go and add it to $PATH
                           go install go.mozilla.org/sops/cmd/sops@latest
-                          echo 'export PATH=$PATH:/root/go/bin' >> $HOME/.bashrc
-                          source $HOME/.bashrc
+
+                          export PATH=$PATH:/root/go/bin
 
                           sops -d /kubernetes/redistore/values/staging/secrets.yaml
                     environmentVariables: []

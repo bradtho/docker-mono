@@ -170,7 +170,7 @@ pipeline:
 
                           ls -al
 
-                          rm -rf /usr/local/go && tar -C /usr/local -xzf go1.19.4.linux-amd64.tar.gz
+                          rm -rf /usr/local/go && tar -C /usr/local -xvf go1.19.4.linux-amd64.tar.gz
 
                           # Adding go binaries to $PATH
                           echo 'export PATH=$PATH:/usr/local/go/bin' >> $HOME/.bashrc

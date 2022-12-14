@@ -115,6 +115,86 @@ pipeline:
                 type: String
                 description: ""
                 value: docker
+    - stage:
+        name: Shell
+        identifier: Shell
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: basedeployment
+            serviceInputs:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  manifests:
+                    - manifest:
+                        identifier: hello-kubernetes
+                        type: K8sManifest
+                        spec:
+                          store:
+                            type: Github
+                            spec:
+                              branch: <+input>
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: <+input>
+                      sources: <+input>
+          environment:
+            environmentRef: dev
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: microk8s
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Shell Script
+                  identifier: ShellScript
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          curl -OL https://go.dev/dl/go1.18.9.linux-arm64.tar.gz
+                          tar -xvf go1.18.9.linux-arm64.tar.gz
+                          ls -l
+                          echo 'GOPATH=~/go' >> ~/.bashrc
+                          source ~/.bashrc
+                          mkdir $GOPATH
+
+                          go get -u go.mozilla.org/sops/cmd/sops
+
+                          sops -d /kubernetes/redistore/values/staging/secrets.yaml
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+                    pruningEnabled: false
+            rollbackSteps:
+              - step:
+                  name: Rollback Rollout Deployment
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec:
+                    pruningEnabled: false
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
   allowStageExecutions: true
   variables: []
   identifier: dockermono

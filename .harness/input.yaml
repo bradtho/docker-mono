@@ -1,0 +1,34 @@
+inputSet:
+  identifier: "input"
+  pipeline:
+    identifier: "dockermono"
+    stages:
+    - stage:
+        identifier: "Shell"
+        type: "Deployment"
+        spec:
+          service:
+            serviceInputs:
+              serviceDefinition:
+                type: "Kubernetes"
+                spec:
+                  manifests:
+                  - manifest:
+                      identifier: "hello-kubernetes"
+                      type: "K8sManifest"
+                      spec:
+                        store:
+                          type: "Github"
+                          spec:
+                            branch: "main"
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: "hello-kubernetes"
+                      sources:
+                      - identifier: "hello-kubernetes"
+                        type: "DockerRegistry"
+                        spec:
+                          tag: "v1.0.0"
+  name: "input"
+  orgIdentifier: "default"
+  projectIdentifier: "sandpit"

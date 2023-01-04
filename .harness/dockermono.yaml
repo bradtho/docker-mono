@@ -1,221 +1,199 @@
 pipeline:
-  projectIdentifier: sandpit
-  orgIdentifier: default
+  projectIdentifier: "sandpit"
+  orgIdentifier: "default"
   tags: {}
   stages:
-    - parallel:
-        - stage:
-            name: Build Image 1
-            identifier: Build_Image_1
-            type: CI
-            spec:
-              cloneCodebase: true
-              infrastructure:
-                type: KubernetesDirect
-                spec:
-                  connectorRef: microk8s
-                  namespace: development
-                  automountServiceAccountToken: true
-                  nodeSelector: {}
-                  containerSecurityContext:
-                    runAsNonRoot: false
-                  os: Linux
-              execution:
-                steps:
-                  - step:
-                      type: Run
-                      name: Build Paths Service 1
-                      identifier: Build_Paths
-                      spec:
-                        connectorRef: account.Docker_Hub
-                        image: bitnami/git
-                        shell: Bash
-                        command: |-
-                          CHANGES=($(git diff --name-only HEAD HEAD~1 | cut -d/ -f1))
-
-                          if printf '%s\0' "${CHANGES[@]}" | grep -Fxqz -- "$SERVICE"; then
-                            BUILD=True
-                          fi
-                        envVariables:
-                          SERVICE: service-1
-                        outputVariables:
-                          - name: BUILD
-                        imagePullPolicy: Always
-                      failureStrategies: []
-                  - step:
-                      type: BuildAndPushDockerRegistry
-                      name: Build Service-1
-                      identifier: Build_Image
-                      spec:
-                        connectorRef: account.Docker_Hub_Repo
-                        repo: bradtho/service-1
-                        tags:
-                          - latest
-                        dockerfile: <+execution.steps.Build_Paths.spec.envVariables.SERVICE>/Dockerfile
-                        context: <+execution.steps.Build_Paths.spec.envVariables.SERVICE>
-                        optimize: true
-                      failureStrategies: []
-                      when:
-                        stageStatus: Success
-                        condition: <+execution.steps.Build_Paths.output.outputVariables.BUILD>
-            variables:
-              - name: container
-                type: String
-                description: ""
-                value: docker
-            when:
-              pipelineStatus: Success
-        - stage:
-            name: Build Image 2
-            identifier: Build_Image_2
-            description: ""
-            type: CI
-            spec:
-              cloneCodebase: true
-              infrastructure:
-                useFromStage: Build_Image_1
-              execution:
-                steps:
-                  - step:
-                      type: Run
-                      name: Build Paths Service 2
-                      identifier: Build_Service_2
-                      spec:
-                        connectorRef: account.Docker_Hub
-                        image: bitnami/git
-                        shell: Bash
-                        command: |-
-                          CHANGES=($(git diff --name-only HEAD HEAD~1 | cut -d/ -f1))
-
-                          if printf '%s\0' "${CHANGES[@]}" | grep -Fxqz -- "$SERVICE"; then
-                            BUILD=True
-                          fi
-                        envVariables:
-                          SERVICE: service-2
-                        outputVariables:
-                          - name: BUILD
-                      failureStrategies: []
-                  - step:
-                      type: BuildAndPushDockerRegistry
-                      name: Build Service-2
-                      identifier: Build_Service2
-                      spec:
-                        connectorRef: account.Docker_Hub_Repo
-                        repo: bradtho/service-2
-                        tags:
-                          - latest
-                        dockerfile: service-2/Dockerfile
-                        context: service-2
-                      when:
-                        stageStatus: Success
-                        condition: <+execution.steps.Build_Service_2.output.outputVariables.BUILD>
-                      failureStrategies: []
-            variables:
-              - name: container
-                type: String
-                description: ""
-                value: docker
+  - parallel:
     - stage:
-        name: Shell
-        identifier: Shell
-        description: ""
-        type: Deployment
+        name: "Build Image 1"
+        identifier: "Build_Image_1"
+        type: "CI"
         spec:
-          deploymentType: Kubernetes
-          service:
-            serviceRef: basedeployment
-            serviceInputs:
-              serviceDefinition:
-                type: Kubernetes
-                spec:
-                  manifests:
-                    - manifest:
-                        identifier: hello-kubernetes
-                        type: K8sManifest
-                        spec:
-                          store:
-                            type: Github
-                            spec:
-                              branch: <+input>
-                  artifacts:
-                    primary:
-                      primaryArtifactRef: <+input>
-                      sources: <+input>
-          environment:
-            environmentRef: dev
-            deployToAll: false
-            infrastructureDefinitions:
-              - identifier: microk8s
+          cloneCodebase: true
+          infrastructure:
+            type: "KubernetesDirect"
+            spec:
+              connectorRef: "microk8s"
+              namespace: "development"
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              containerSecurityContext:
+                runAsNonRoot: false
+              os: "Linux"
           execution:
             steps:
-              - step:
-                  type: ShellScript
-                  name: Shell Script
-                  identifier: ShellScript
+            - step:
+                type: "Run"
+                name: "Build Paths Service 1"
+                identifier: "Build_Paths"
+                spec:
+                  connectorRef: "account.Docker_Hub"
+                  image: "bitnami/git"
+                  shell: "Bash"
+                  command: "CHANGES=($(git diff --name-only HEAD HEAD~1 | cut -d/\
+                    \ -f1))\n\nif printf '%s\\0' \"${CHANGES[@]}\" | grep -Fxqz --\
+                    \ \"$SERVICE\"; then\n  BUILD=True\nfi"
+                  envVariables:
+                    SERVICE: "service-1"
+                  outputVariables:
+                  - name: "BUILD"
+                  imagePullPolicy: "Always"
+                failureStrategies: []
+            - step:
+                type: "BuildAndPushDockerRegistry"
+                name: "Build Service-1"
+                identifier: "Build_Image"
+                spec:
+                  connectorRef: "account.Docker_Hub_Repo"
+                  repo: "bradtho/service-1"
+                  tags:
+                  - "latest"
+                  dockerfile: "<+execution.steps.Build_Paths.spec.envVariables.SERVICE>/Dockerfile"
+                  context: "<+execution.steps.Build_Paths.spec.envVariables.SERVICE>"
+                  optimize: true
+                failureStrategies: []
+                when:
+                  stageStatus: "Success"
+                  condition: "<+execution.steps.Build_Paths.output.outputVariables.BUILD>"
+        variables:
+        - name: "container"
+          type: "String"
+          description: ""
+          value: "docker"
+        when:
+          pipelineStatus: "Success"
+    - stage:
+        name: "Build Image 2"
+        identifier: "Build_Image_2"
+        description: ""
+        type: "CI"
+        spec:
+          cloneCodebase: true
+          infrastructure:
+            useFromStage: "Build_Image_1"
+          execution:
+            steps:
+            - step:
+                type: "Run"
+                name: "Build Paths Service 2"
+                identifier: "Build_Service_2"
+                spec:
+                  connectorRef: "account.Docker_Hub"
+                  image: "bitnami/git"
+                  shell: "Bash"
+                  command: "CHANGES=($(git diff --name-only HEAD HEAD~1 | cut -d/\
+                    \ -f1))\n\nif printf '%s\\0' \"${CHANGES[@]}\" | grep -Fxqz --\
+                    \ \"$SERVICE\"; then\n  BUILD=True\nfi"
+                  envVariables:
+                    SERVICE: "service-2"
+                  outputVariables:
+                  - name: "BUILD"
+                failureStrategies: []
+            - step:
+                type: "BuildAndPushDockerRegistry"
+                name: "Build Service-2"
+                identifier: "Build_Service2"
+                spec:
+                  connectorRef: "account.Docker_Hub_Repo"
+                  repo: "bradtho/service-2"
+                  tags:
+                  - "latest"
+                  dockerfile: "service-2/Dockerfile"
+                  context: "service-2"
+                when:
+                  stageStatus: "Success"
+                  condition: "<+execution.steps.Build_Service_2.output.outputVariables.BUILD>"
+                failureStrategies: []
+        variables:
+        - name: "container"
+          type: "String"
+          description: ""
+          value: "docker"
+  - stage:
+      name: "Shell"
+      identifier: "Shell"
+      description: ""
+      type: "Deployment"
+      spec:
+        deploymentType: "Kubernetes"
+        service:
+          serviceRef: "basedeployment"
+          serviceInputs:
+            serviceDefinition:
+              type: "Kubernetes"
+              spec:
+                manifests:
+                - manifest:
+                    identifier: "hello-kubernetes"
+                    type: "K8sManifest"
+                    spec:
+                      store:
+                        type: "Github"
+                        spec:
+                          paths: "<+input>"
+                          branch: "<+input>"
+                      valuesPaths: "<+input>"
+                artifacts:
+                  primary:
+                    primaryArtifactRef: "<+input>"
+                    sources: "<+input>"
+        environment:
+          environmentRef: "dev"
+          deployToAll: false
+          infrastructureDefinitions:
+          - identifier: "microk8s"
+        execution:
+          steps:
+          - step:
+              type: "ShellScript"
+              name: "Shell Script"
+              identifier: "ShellScript"
+              spec:
+                shell: "Bash"
+                onDelegate: true
+                source:
+                  type: "Inline"
                   spec:
-                    shell: Bash
-                    onDelegate: true
-                    source:
-                      type: Inline
-                      spec:
-                        script: |-
-                          # Validate
-                          ls -al $HOME
-
-                          # Download and install Go 1.19
-
-                          curl -OL https://go.dev/dl/go1.19.4.linux-amd64.tar.gz
-
-                          ls -al
-
-                          rm -rf /usr/local/go && tar -xzf go1.19.4.linux-amd64.tar.gz -C /usr/local
-
-                          ls -al /usr/local/go
-
-                          # Adding go binaries to $PATH
-                          export PATH=$PATH:/usr/local/go/bin
-
-                          go version
-
-                          # Install sops with go and add it to $PATH
-                          go install go.mozilla.org/sops/cmd/sops@latest
-
-                          export PATH=$PATH:/root/go/bin
-
-                          sops -d /kubernetes/redistore/values/staging/secrets.yaml
-                    environmentVariables: []
-                    outputVariables: []
-                  timeout: 10m
-              - step:
-                  name: Rollout Deployment
-                  identifier: rolloutDeployment
-                  type: K8sRollingDeploy
-                  timeout: 10m
-                  spec:
-                    skipDryRun: false
-                    pruningEnabled: false
-            rollbackSteps:
-              - step:
-                  name: Rollback Rollout Deployment
-                  identifier: rollbackRolloutDeployment
-                  type: K8sRollingRollback
-                  timeout: 10m
-                  spec:
-                    pruningEnabled: false
-        tags: {}
-        failureStrategies:
-          - onFailure:
-              errors:
-                - AllErrors
-              action:
-                type: StageRollback
+                    script: "# Validate\nls -al $HOME\n\n# Download and install Go\
+                      \ 1.19\n\ncurl -OL https://go.dev/dl/go1.19.4.linux-amd64.tar.gz\n\
+                      \nls -al\n\nrm -rf /usr/local/go && tar -xzf go1.19.4.linux-amd64.tar.gz\
+                      \ -C /usr/local\n\nls -al /usr/local/go\n\n# Adding go binaries\
+                      \ to $PATH\nexport PATH=$PATH:/usr/local/go/bin\n\ngo version\n\
+                      \n# Install sops with go and add it to $PATH\ngo install go.mozilla.org/sops/cmd/sops@latest\n\
+                      \nexport PATH=$PATH:/root/go/bin\n\nsops -d /kubernetes/redistore/values/staging/secrets.yaml"
+                environmentVariables: []
+                outputVariables: []
+              timeout: "10m"
+          - step:
+              name: "Rollout Deployment"
+              identifier: "rolloutDeployment"
+              type: "K8sRollingDeploy"
+              timeout: "10m"
+              spec:
+                skipDryRun: false
+                pruningEnabled: false
+          rollbackSteps:
+          - step:
+              name: "Rollback Rollout Deployment"
+              identifier: "rollbackRolloutDeployment"
+              type: "K8sRollingRollback"
+              timeout: "10m"
+              spec:
+                pruningEnabled: false
+      tags: {}
+      failureStrategies:
+      - onFailure:
+          errors:
+          - "AllErrors"
+          action:
+            type: "StageRollback"
   allowStageExecutions: true
   variables: []
-  identifier: dockermono
-  name: docker-mono
+  identifier: "dockermono"
+  name: "docker-mono"
   properties:
     ci:
       codebase:
-        connectorRef: account.Github_OAuth_1661164576460
-        repoName: bradtho/docker-mono
-        build: <+input>
+        connectorRef: "account.Github_OAuth_1661164576460"
+        repoName: "bradtho/docker-mono"
+        build: "<+input>"

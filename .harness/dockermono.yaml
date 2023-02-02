@@ -19,6 +19,12 @@ pipeline:
                   nodeSelector: {}
                   containerSecurityContext:
                     runAsNonRoot: false
+                  dnsConfig:
+                    nameservers:
+                      - 1.2.3.4
+                    searches:
+                      - ns1.svc.cluster-domain.example
+                      - my.dns.search.suffix
                   os: Linux
               execution:
                 steps:

@@ -1,0 +1,135 @@
+template:
+  name: docker-mono-template
+  type: Pipeline
+  projectIdentifier: sandpit
+  orgIdentifier: default
+  spec:
+    stages:
+      - parallel:
+          - stage:
+              name: Build Image 1
+              identifier: Build_Image_1
+              type: CI
+              spec:
+                cloneCodebase: true
+                infrastructure:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: microk8s
+                    namespace: development
+                    automountServiceAccountToken: true
+                    nodeSelector: {}
+                    containerSecurityContext:
+                      runAsNonRoot: false
+                    dnsConfig:
+                      nameservers:
+                        - 1.2.3.4
+                      searches:
+                        - ns1.svc.cluster-domain.example
+                        - my.dns.search.suffix
+                    os: Linux
+                execution:
+                  steps:
+                    - step:
+                        type: Run
+                        name: Build Paths Service 1
+                        identifier: Build_Paths
+                        spec:
+                          connectorRef: account.Docker_Hub
+                          image: bitnami/git
+                          shell: Bash
+                          command: |-
+                            CHANGES=($(git diff --name-only HEAD HEAD~1 | cut -d/ -f1))
+
+                            if printf '%s\0' "${CHANGES[@]}" | grep -Fxqz -- "$SERVICE"; then
+                              BUILD=True
+                            fi
+                          envVariables:
+                            SERVICE: service-1
+                          outputVariables:
+                            - name: BUILD
+                          imagePullPolicy: Always
+                        failureStrategies: []
+                    - step:
+                        type: BuildAndPushDockerRegistry
+                        name: Build Service-1
+                        identifier: Build_Image
+                        spec:
+                          connectorRef: account.Docker_Hub_Repo
+                          repo: bradtho/service-1
+                          tags:
+                            - latest
+                          dockerfile: <+execution.steps.Build_Paths.spec.envVariables.SERVICE>/Dockerfile
+                          context: <+execution.steps.Build_Paths.spec.envVariables.SERVICE>
+                          optimize: true
+                        failureStrategies: []
+                        when:
+                          stageStatus: Success
+                          condition: <+execution.steps.Build_Paths.output.outputVariables.BUILD>
+              variables:
+                - name: container
+                  type: String
+                  description: ""
+                  value: docker
+              when:
+                pipelineStatus: Success
+          - stage:
+              name: Build Image 2
+              identifier: Build_Image_2
+              description: ""
+              type: CI
+              spec:
+                cloneCodebase: true
+                infrastructure:
+                  useFromStage: Build_Image_1
+                execution:
+                  steps:
+                    - step:
+                        type: Run
+                        name: Build Paths Service 2
+                        identifier: Build_Service_2
+                        spec:
+                          connectorRef: account.Docker_Hub
+                          image: bitnami/git
+                          shell: Bash
+                          command: |-
+                            CHANGES=($(git diff --name-only HEAD HEAD~1 | cut -d/ -f1))
+
+                            if printf '%s\0' "${CHANGES[@]}" | grep -Fxqz -- "$SERVICE"; then
+                              BUILD=True
+                            fi
+                          envVariables:
+                            SERVICE: service-2
+                          outputVariables:
+                            - name: BUILD
+                        failureStrategies: []
+                    - step:
+                        type: BuildAndPushDockerRegistry
+                        name: Build Service-2
+                        identifier: Build_Service2
+                        spec:
+                          connectorRef: account.Docker_Hub_Repo
+                          repo: bradtho/service-2
+                          tags:
+                            - latest
+                          dockerfile: service-2/Dockerfile
+                          context: service-2
+                        when:
+                          stageStatus: Success
+                          condition: <+execution.steps.Build_Service_2.output.outputVariables.BUILD>
+                        failureStrategies: []
+              variables:
+                - name: container
+                  type: String
+                  description: ""
+                  value: docker
+    allowStageExecutions: true
+    variables: []
+    properties:
+      ci:
+        codebase:
+          connectorRef: account.Github_OAuth_1661164576460
+          repoName: bradtho/docker-mono
+          build: <+input>
+  identifier: dockermonotemplate
+  versionLabel: 1.0.0

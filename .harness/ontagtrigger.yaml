@@ -1,5 +1,6 @@
 inputSet:
   name: tag-trigger
+  tags: {}
   identifier: tagtrigger
   orgIdentifier: default
   projectIdentifier: sandpit
@@ -11,4 +12,8 @@ inputSet:
           build:
             type: tag
             spec:
-              tag: <+trigger.tag>
+              tag: <+eventPayload.release.tag_name>
+  cacheResponse:
+    cacheState: VALID_CACHE
+    ttlLeft: 2591908590
+    lastUpdatedAt: 1684740002360

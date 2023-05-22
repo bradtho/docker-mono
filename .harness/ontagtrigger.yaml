@@ -1,0 +1,14 @@
+inputSet:
+  name: tag-trigger
+  identifier: tagtrigger
+  orgIdentifier: default
+  projectIdentifier: sandpit
+  pipeline:
+    identifier: dockermono
+    properties:
+      ci:
+        codebase:
+          build:
+            type: tag
+            spec:
+              tag: <+trigger.tag>

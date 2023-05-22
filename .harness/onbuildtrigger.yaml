@@ -1,14 +1,19 @@
 inputSet:
-  identifier: "buildtrigger"
-  name: "build-trigger"
-  orgIdentifier: "default"
-  projectIdentifier: "sandpit"
+  name: build-trigger
+  tags: {}
+  identifier: buildtrigger
+  orgIdentifier: default
+  projectIdentifier: sandpit
   pipeline:
-    identifier: "dockermono"
+    identifier: dockermono
     properties:
       ci:
         codebase:
           build:
-            type: "branch"
+            type: branch
             spec:
-              branch: "<+trigger.branch>"
+              branch: <+trigger.branch>
+  cacheResponse:
+    cacheState: VALID_CACHE
+    ttlLeft: 2590892982
+    lastUpdatedAt: 1684736460573

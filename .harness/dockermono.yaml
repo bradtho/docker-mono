@@ -133,9 +133,6 @@ pipeline:
               parallel: false
             values:
               - environmentRef: dev
-                deployToAll: false
-                infrastructureDefinitions: []
-              - environmentRef: UAT
                 deployToAll: true
                 infrastructureDefinitions: <+input>
           execution:

@@ -1,0 +1,59 @@
+pipeline:
+  name: git-delete
+  identifier: gitdelete
+  projectIdentifier: octoprint
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: dleete
+        identifier: dleete
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: octoprint
+            serviceInputs:
+              serviceDefinition:
+                type: Kubernetes
+                spec:
+                  artifacts:
+                    primary:
+                      primaryArtifactRef: <+input>
+                      sources: <+input>
+          environment:
+            environmentRef: k3sdesktop
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: k3sdesktop
+                inputs:
+                  identifier: k3sdesktop
+                  type: KubernetesDirect
+                  spec:
+                    namespace: <+input>
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+                    pruningEnabled: false
+            rollbackSteps:
+              - step:
+                  name: Rollback Rollout Deployment
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec:
+                    pruningEnabled: false
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
